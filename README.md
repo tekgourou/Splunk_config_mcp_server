@@ -44,7 +44,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
 
 - Python 3.10 or higher
 - [Claude Desktop](https://claude.ai/download) installed
-- A running Splunk instance (on-premises or accessible via network)
+- A running Splunk instance (on-premises accessible via network, or Cloud)
 - Splunk REST API access on port `8089` (default)
 
 ---
