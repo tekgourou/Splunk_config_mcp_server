@@ -368,6 +368,10 @@ Once installed, you can interact with your Splunk instance naturally in Claude D
 
 > *"What is the current Splunk version and license status?"*
 
+### Demo
+
+https://github.com/tekgourou/Splunk_config_mcp_server/blob/main/splunk_config_mcp_example.mp4
+
 ---
 
 ## Security Notes
