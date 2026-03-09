@@ -4,6 +4,10 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
 
 ---
 
+![Splunk Configuration MCP Server](splunk_config_mcp.png)
+
+---
+
 ## Table of Contents
 
 - [Features](#features)
