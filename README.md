@@ -13,6 +13,7 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that e
   - [Windows](#windows)
 - [Splunk Configuration](#splunk-configuration)
   - [Generating an Authentication Token (Recommended)](#generating-an-authentication-token-recommended)
+  - [RBAC: Creating a Least-Privilege Role for the MCP Token](#rbac-creating-a-least-privilege-role-for-the-mcp-token)
   - [Enabling the REST API Port](#enabling-the-rest-api-port)
 - [Available Tools](#available-tools)
 - [How It Works](#how-it-works)
@@ -198,6 +199,75 @@ Token-based authentication is strongly preferred over username/password. Here's 
 
 ---
 
+### RBAC: Creating a Least-Privilege Role for the MCP Token
+
+Instead of using a full `admin` account, it is strongly recommended to create a **dedicated service account** with a **custom role** scoped to only the capabilities the MCP server actually needs. This limits the blast radius if the token is ever compromised.
+
+#### Step 1 — Create a custom role
+
+1. Log in to Splunk Web and go to **Settings** → **Access Controls** → **Roles**
+2. Click **New Role**
+3. Set the **Role Name** to something descriptive, e.g. `mcp_config_role`
+4. Under **Inheritance**, add `user` as a base role (provides baseline search capabilities)
+5. Under **Capabilities**, enable the following:
+
+| Capability | Required for |
+|---|---|
+| `edit_index_settings` | Create / update indexes |
+| `delete_indexes` | Delete indexes *(omit if not needed)* |
+| `edit_savedsearches` | Create / update / delete saved searches |
+| `edit_dashboards` | Create / update / delete dashboards |
+| `edit_tcp` | Manage HEC tokens |
+| `edit_lookups` | Upload lookup tables |
+| `edit_user` | Create users *(omit if not needed)* |
+| `list_inputs` | List HEC tokens |
+| `rest_apps_management` | List / inspect apps |
+| `get_metadata` | Read index metadata |
+| `search` | Execute searches |
+| `schedule_search` | Schedule saved searches |
+
+> **Tip:** If you only need read/list operations (no create or delete), you can omit all `edit_*` capabilities and rely solely on `search`, `get_metadata`, and `rest_apps_management`.
+
+6. Under **Indexes**, grant **Search** permission on the indexes the service account should be allowed to read. Leave all others unchecked.
+7. Click **Save**
+
+#### Step 2 — Create a dedicated service account
+
+1. Go to **Settings** → **Access Controls** → **Users**
+2. Click **New User**
+3. Fill in the fields:
+   - **Username:** `svc-claude-mcp`
+   - **Full Name:** `Claude MCP Service Account`
+   - **Email:** *(your team's shared mailbox or leave blank)*
+   - **Roles:** assign **only** `mcp_config_role` (remove `user` if inherited)
+   - **Password:** set a strong password (it will not be used directly — only the token matters)
+4. Click **Save**
+
+#### Step 3 — Generate a token for the service account
+
+1. Log in to Splunk Web **as the `svc-claude-mcp` user** (or have an admin generate the token on their behalf via the REST API)
+2. Go to **Account Settings** → **Authentication Tokens** → **Generate New Token**
+3. Set:
+   - **Audience:** `claude-mcp`
+   - **Expiration:** recommended — set a rotation period (e.g., 90 or 180 days)
+4. Copy the token and set it as `SPLUNK_TOKEN` in `claude_desktop_config.json`
+
+#### Token rotation
+
+Tokens should be rotated periodically. To rotate:
+
+1. Generate a new token for `svc-claude-mcp` (same steps as above)
+2. Update `SPLUNK_TOKEN` in `claude_desktop_config.json`
+3. Restart Claude Desktop
+4. Revoke the old token via **Account Settings** → **Authentication Tokens**
+
+> **Audit tip:** In Splunk, you can monitor token usage with:
+> ```spl
+> index=_audit action=token_auth user=svc-claude-mcp
+> ```
+
+---
+
 ### Enabling the REST API Port
 
 The MCP server communicates with Splunk over the REST API, which runs on port `8089` by default.
@@ -299,7 +369,9 @@ Once installed, you can interact with your Splunk instance naturally in Claude D
 ## Security Notes
 
 - **Never commit** your `claude_desktop_config.json` or any file containing your `SPLUNK_TOKEN` to a public repository.
-- Use a **dedicated Splunk service account** with the least privileges necessary rather than your personal admin account.
+- Use a **dedicated Splunk service account** (`svc-claude-mcp`) with a **custom least-privilege role** rather than your personal admin account — see the [RBAC section](#rbac-creating-a-least-privilege-role-for-the-mcp-token) above.
+- **Rotate tokens** on a regular schedule (every 90–180 days) and revoke old tokens immediately after rotation.
 - Set `SPLUNK_VERIFY_SSL=true` in production environments with valid TLS certificates.
 - Token-based auth is always preferred over `SPLUNK_USERNAME`/`SPLUNK_PASSWORD`, which are deprecated in this server.
 - The `delete_index` tool is destructive and irreversible — use with caution.
+- Monitor service account token usage regularly via `index=_audit action=token_auth user=svc-claude-mcp`.
