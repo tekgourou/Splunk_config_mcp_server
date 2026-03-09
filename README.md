@@ -370,7 +370,7 @@ Once installed, you can interact with your Splunk instance naturally in Claude D
 
 ### Demo
 
-https://github.com/tekgourou/Splunk_config_mcp_server/blob/main/splunk_config_mcp_example.mp4
+https://raw.githubusercontent.com/tekgourou/Splunk_config_mcp_server/main/splunk_config_mcp_example.mp4
 
 ---
 
