@@ -292,8 +292,6 @@ Once installed, you can interact with your Splunk instance naturally in Claude D
 
 > *"Create a HEC token named 'iot-sensors' and assign it to the 'iot' index"*
 
-> *"Export the full configuration of the 'CCCS_Alerts' app as JSON"*
-
 > *"What is the current Splunk version and license status?"*
 
 ---
